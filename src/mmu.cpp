@@ -17,6 +17,7 @@ uint32_t Mmu::createProcess()
 
     Variable *var = new Variable();
     var->name = "<FREE_SPACE>";
+    var->type = DataType::FreeSpace;
     var->virtual_address = 0;
     var->size = _max_size;
     proc->variables.push_back(var);
@@ -41,6 +42,7 @@ void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type
 
     Variable *var = new Variable();
     var->name = var_name;
+    var->type = type;
     var->virtual_address = address;
     var->size = size;
     if (proc != NULL)

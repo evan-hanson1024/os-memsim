@@ -84,7 +84,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
     //   - if no hole is large enough, allocate new page(s)
     //   - insert variable into MMU
-    //   - print virtual memory address 
+    //   - print virtual memory address
 }
 
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory)
@@ -93,7 +93,7 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     //   - look up physical address for variable based on its virtual address / offset
     //   - insert `value` into `memory` at physical address
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
-    //           multiple elements of an array) 
+    //           multiple elements of an array)
 }
 
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table)

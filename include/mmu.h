@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-enum DataType : uint8_t {Char, Short, Int, Float, Long, Double};
+enum DataType : uint8_t {FreeSpace, Char, Short, Int, Float, Long, Double};
 
 typedef struct Variable {
     std::string name;
