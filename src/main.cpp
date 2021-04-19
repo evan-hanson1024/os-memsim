@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <bits/stdc++.h>
 #include "mmu.h"
 #include "pagetable.h"
 
@@ -10,6 +11,9 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory);
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
+
+std::vector<std::string> getTokens(std::string command);
+
 
 int main(int argc, char **argv)
 {
@@ -39,6 +43,21 @@ int main(int argc, char **argv)
     while (command != "exit") {
         // Handle command
         // TODO: implement this!
+        std::vector<std::string> tokens = getTokens(command);
+        if(tokens[0] == "create"){
+
+        }else if(tokens[0] == "allocate"){
+
+        }else if(tokens[0] == "set"){
+
+        }else if(tokens[0] == "free"){
+            freeVariable(stoi(tokens[1]), tokens[2], mmu, page_table);
+        }else if(tokens[0] == "terminate"){
+            terminateProcess(stoi(tokens[1]), mmu, page_table);
+        }else if(tokens[0] == "print"){
+            
+        }
+
 
         // Get next command
         std::cout << "> ";
@@ -53,6 +72,16 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+std::vector<std::string> getTokens(std::string command){
+    std::stringstream ss(command);
+    std::string word;
+    std::vector<std::string> tokens;
+    while(ss >> word){
+        tokens.push_back(word);
+    }
+    return tokens;
+}
 void printStartMessage(int page_size)
 {
     std::cout << "Welcome to the Memory Allocation Simulator! Using a page size of " << page_size << " bytes." << std:: endl;
@@ -100,6 +129,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 {
     // TODO: implement this!
     //   - remove entry from MMU
+    mmu->removeVariable(pid, var_name);
     //   - free page if this variable was the only one on a given page
 }
 
@@ -107,5 +137,9 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
     // TODO: implement this!
     //   - remove process from MMU
+    std::vector<uint32_t> virtualAddresses = mmu->removeProcess(pid);
     //   - free all pages associated with given process
+    for(int i = 0; i < virtualAddresses.size(); i++){
+        //TODO: free all pages
+    }
 }
