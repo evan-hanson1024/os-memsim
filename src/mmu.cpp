@@ -62,6 +62,38 @@ void Mmu::print()
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
             // TODO: print all variables (excluding <FREE_SPACE> entries)
+            if(_processes[i]->variables[j]->name != "<FREE_SPACE>" ){
+                std::cout << _processes[i]->pid << "|";
+                std::cout << _processes[i]->variables[j]->name << "|";
+                std::cout << _processes[i]->variables[j]->virtual_address << "|";
+                std::cout << _processes[i]->variables[j]->size << std::endl;
+            }
+        }
+    }
+}
+
+std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
+    std::vector<uint32_t> virtual_adresses;
+    for(int i = 0; i < _processes.size(); i++){
+        if(_processes[i]->pid == pid){
+            for(int j = 0; j < _processes[i]->variables.size(); j++){
+                virtual_adresses.push_back(_processes[i]->variables[j]->virtual_address);
+            }
+            _processes.erase(_processes.begin()+i);
+            return virtual_adresses;
+        }
+    }
+    return virtual_adresses;
+}
+
+void Mmu::removeVariable(uint32_t pid, std::string var_name){
+    for(int i = 0; i < _processes.size(); i++){
+        if(_processes[i]->pid == pid){
+            for(int j = 0; _processes[i]->variables.size(); j++){
+                if(_processes[i]->variables[j]->name == var_name){
+                    _processes[i]->variables.erase(_processes[i]->variables.begin()+j);
+                }
+            }
         }
     }
 }

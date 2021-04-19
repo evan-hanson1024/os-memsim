@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <bits/stdc++.h>
 #include "mmu.h"
 #include "pagetable.h"
 
@@ -12,6 +13,9 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void splitString(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
+
+std::vector<std::string> getv(std::string command);
+
 
 int main(int argc, char **argv)
 {
@@ -55,8 +59,18 @@ int main(int argc, char **argv)
                 data_size = std::stoi(v[2]);
                 createProcess(text_size, data_size, mmu, page_table);
             }
+        }else if(v[0] == std::string("allocate")){
+
+        }else if(v[0] == "set"){
+
+        }else if(v[0] == "free"){
+            freeVariable(stoi(v[1]), v[2], mmu, page_table);
+        }else if(v[0] == "terminate"){
+            terminateProcess(stoi(v[1]), mmu, page_table);
+        }else if(v[0] == "print"){
+            
         }
-        
+
 
         // Get next command
         std::cout << "> ";
@@ -71,6 +85,16 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+std::vector<std::string> getv(std::string command){
+    std::stringstream ss(command);
+    std::string word;
+    std::vector<std::string> v;
+    while(ss >> word){
+        v.push_back(word);
+    }
+    return v;
+}
 void printStartMessage(int page_size)
 {
     std::cout << "Welcome to the Memory Allocation Simulator! Using a page size of " << page_size << " bytes." << std:: endl;
@@ -126,6 +150,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 {
     // TODO: implement this!
     //   - remove entry from MMU
+    mmu->removeVariable(pid, var_name);
     //   - free page if this variable was the only one on a given page
 }
 
@@ -133,7 +158,11 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
     // TODO: implement this!
     //   - remove process from MMU
+    std::vector<uint32_t> virtualAddresses = mmu->removeProcess(pid);
     //   - free all pages associated with given process
+    for(int i = 0; i < virtualAddresses.size(); i++){
+        //TODO: free all pages
+    }
 }
 
 void splitString(std::string s, std::vector<std::string> &v) {
