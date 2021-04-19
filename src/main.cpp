@@ -14,8 +14,6 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void splitString(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
 
-std::vector<std::string> getv(std::string command);
-
 
 int main(int argc, char **argv)
 {
@@ -86,15 +84,7 @@ int main(int argc, char **argv)
 }
 
 
-std::vector<std::string> getv(std::string command){
-    std::stringstream ss(command);
-    std::string word;
-    std::vector<std::string> v;
-    while(ss >> word){
-        v.push_back(word);
-    }
-    return v;
-}
+
 void printStartMessage(int page_size)
 {
     std::cout << "Welcome to the Memory Allocation Simulator! Using a page size of " << page_size << " bytes." << std:: endl;

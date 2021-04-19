@@ -31,14 +31,17 @@ void PageTable::addEntry(uint32_t pid, int page_number)
 
     int frame = 0; 
     // Find free frame
-    // TODO: implement this!
+    if(_table.count(entry) > 0){
+        //this probably won't work
+        frame = _table.count(entry);
+    }
+
     _table[entry] = frame;
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
 {
     // Convert virtual address to page_number and page_offset
-    // TODO: implement this!
     int n = (int) log2(_page_size);
     int page_number = virtual_address >> n;
     int page_offset = virtual_address & (_page_size - 1);
@@ -50,7 +53,8 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     int address = -1;
     if (_table.count(entry) > 0)
     {
-        // TODO: implement this!
+        int frame = _table.at(entry);
+        address = frame * _page_size + page_offset;
     }
 
     return address;
@@ -67,6 +71,8 @@ void PageTable::print()
 
     for (i = 0; i < keys.size(); i++)
     {
-        // TODO: print all pages
+        std::cout << keys[i] << "|";
+        std::cout << _table.at(keys[i]) << std::endl;
+        
     }
 }
