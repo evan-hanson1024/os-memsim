@@ -10,6 +10,8 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory);
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
+void splitString(std::string s, std::vector<std::string> &v);
+void printVector(std::vector<std::string> v);
 
 int main(int argc, char **argv)
 {
@@ -36,16 +38,32 @@ int main(int argc, char **argv)
     std::string command;
     std::cout << "> ";
     std::getline (std::cin, command);
+    std::vector<std::string> v;
+    int text_size;
+    int data_size;
     while (command != "exit") {
         // Handle command
         // TODO: implement this!
+        v.clear();
+        splitString(command, v);
+        //printVector(v);
+        if (v[0] == std::string("create")) {
+            if (v.size() != 3) {
+                printf("Create must have 3 arguments");
+            } else {
+                text_size = std::stoi(v[1]);
+                data_size = std::stoi(v[2]);
+                createProcess(text_size, data_size, mmu, page_table);
+            }
+        }
+        
 
         // Get next command
         std::cout << "> ";
         std::getline (std::cin, command);
     }
 
-    // Cean up
+    // Clean up
     free(memory);
     delete mmu;
     delete page_table;
@@ -74,8 +92,14 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 {
     // TODO: implement this!
     //   - create new process in the MMU
+    uint32_t processPID;
+    processPID = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
+    allocateVariable(processPID, std::string("<TEXT>", DataType::Char, text_size, mmu, page_table));
+    allocateVariable(processPID, std::string("<GLOBALS>", DataType::Char, data_size, mmu, page_table));
+    allocateVariable(processPID, std::string("<STACK>", DataType::Char, 65536, mmu, page_table));
     //   - print pid
+    std::cout << processPID << std::endl;
 }
 
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
@@ -85,6 +109,8 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     //   - if no hole is large enough, allocate new page(s)
     //   - insert variable into MMU
     //   - print virtual memory address
+    
+
 }
 
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory)
@@ -108,4 +134,28 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
     // TODO: implement this!
     //   - remove process from MMU
     //   - free all pages associated with given process
+}
+
+void splitString(std::string s, std::vector<std::string> &v) {
+	
+	std::string temp = "";
+	for(int i=0; i < s.length(); i++){
+		
+		if(s[i]==' '){
+			v.push_back(temp);
+			temp = "";
+		}
+		else{
+			temp.push_back(s[i]);
+		}
+		
+	}
+	v.push_back(temp);
+	
+}
+
+void printVector(std::vector<std::string> v) {
+	for(int i=0; i < v.size(); i++)
+		std::cout << v[i] << std::endl;
+	std::cout << "\n";
 }
