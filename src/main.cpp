@@ -59,7 +59,7 @@ int main(int argc, char **argv)
                 data_size = std::stoi(v[2]);
                 createProcess(text_size, data_size, mmu, page_table);
             }
-        }else if(v[0] == std::string("allocate")){
+        }else if(v[0] == "allocate"){
 
         }else if(v[0] == "set"){
 
@@ -119,9 +119,9 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     uint32_t processPID;
     processPID = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
-    allocateVariable(processPID, std::string("<TEXT>", DataType::Char, text_size, mmu, page_table));
-    allocateVariable(processPID, std::string("<GLOBALS>", DataType::Char, data_size, mmu, page_table));
-    allocateVariable(processPID, std::string("<STACK>", DataType::Char, 65536, mmu, page_table));
+    allocateVariable(processPID, std::string("<TEXT>"), DataType::Char, text_size, mmu, page_table);
+    allocateVariable(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, mmu, page_table);
+    allocateVariable(processPID, std::string("<STACK>"), DataType::Char, 65536, mmu, page_table);
     //   - print pid
     std::cout << processPID << std::endl;
 }
