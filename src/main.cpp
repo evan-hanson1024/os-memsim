@@ -14,7 +14,6 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void splitString(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
 
-
 int main(int argc, char **argv)
 {
     // Ensure user specified page size as a command line parameter
@@ -83,8 +82,6 @@ int main(int argc, char **argv)
     return 0;
 }
 
-
-
 void printStartMessage(int page_size)
 {
     std::cout << "Welcome to the Memory Allocation Simulator! Using a page size of " << page_size << " bytes." << std:: endl;
@@ -109,10 +106,15 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     uint32_t processPID;
     processPID = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
-    allocateVariable(processPID, std::string("<TEXT>"), DataType::Char, text_size, mmu, page_table);
-    allocateVariable(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, mmu, page_table);
-    allocateVariable(processPID, std::string("<STACK>"), DataType::Char, 65536, mmu, page_table);
+    //allocateVariable(processPID, std::string("<TEXT>"), DataType::Char, text_size, mmu, page_table);
+    //allocateVariable(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, mmu, page_table);
+    //allocateVariable(processPID, std::string("<STACK>"), DataType::Char, 65536, mmu, page_table);
+    mmu->addVariableToProcess(processPID, std::string("<TEXT>"), DataType::Char, text_size, 0);
+    mmu->addVariableToProcess(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, text_size);
+    mmu->addVariableToProcess(processPID, std::string("<STACK>"), DataType::Char, 65536, text_size+data_size);
+    mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print pid
+    mmu->print();
     std::cout << processPID << std::endl;
 }
 
@@ -123,7 +125,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     //   - if no hole is large enough, allocate new page(s)
     //   - insert variable into MMU
     //   - print virtual memory address
-    
+
 
 }
 
@@ -150,7 +152,7 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
     //   - remove process from MMU
     std::vector<uint32_t> virtualAddresses = mmu->removeProcess(pid);
     //   - free all pages associated with given process
-    for(int i = 0; i < virtualAddresses.size(); i++){
+    for (int i = 0; i < virtualAddresses.size(); i++) {
         //TODO: free all pages
     }
 }

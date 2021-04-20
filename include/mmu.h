@@ -34,6 +34,7 @@ public:
     void print();
     std::vector<uint32_t> removeProcess(uint32_t pid);
     void removeVariable(uint32_t pid, std::string var_name);
+    void shiftFreespace(uint32_t pid, uint32_t new_address);
 };
 
 #endif // __MMU_H_

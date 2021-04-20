@@ -10,6 +10,24 @@ Mmu::~Mmu()
 {
 }
 
+void Mmu::shiftFreespace(uint32_t pid, uint32_t new_address) {
+    int i;
+    int j;
+    for (i = 0; i < _processes.size(); i++) {
+        if (_processes[i]->pid == pid) {
+            for (j = 0; j < _processes[i]->variables.size(); j++) {
+                if (std::string(_processes[i]->variables[j]->name) == std::string("<FREE_SPACE>")) {
+                    Variable *var = _processes[i]->variables[j];
+                    _processes[i]->variables.erase(_processes[i]->variables.begin() + j);
+                    std::cout << "HERE" << std::endl;
+                    var->virtual_address = new_address;
+                    _processes[i]->variables.push_back(var);
+                }
+            }
+        }
+    }
+}
+
 uint32_t Mmu::createProcess()
 {
     Process *proc = new Process();

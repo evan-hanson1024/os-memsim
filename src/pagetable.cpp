@@ -1,5 +1,6 @@
 #include "pagetable.h"
 #include <cmath>
+
 PageTable::PageTable(int page_size)
 {
     _page_size = page_size;
