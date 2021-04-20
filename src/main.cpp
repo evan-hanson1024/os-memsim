@@ -106,15 +106,11 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     uint32_t processPID;
     processPID = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
-    //allocateVariable(processPID, std::string("<TEXT>"), DataType::Char, text_size, mmu, page_table);
-    //allocateVariable(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, mmu, page_table);
-    //allocateVariable(processPID, std::string("<STACK>"), DataType::Char, 65536, mmu, page_table);
-    mmu->addVariableToProcess(processPID, std::string("<TEXT>"), DataType::Char, text_size, 0);
-    mmu->addVariableToProcess(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, text_size);
-    mmu->addVariableToProcess(processPID, std::string("<STACK>"), DataType::Char, 65536, text_size+data_size);
-    mmu->shiftFreespace(processPID, text_size+data_size+65536);
+    allocateVariable(processPID, std::string("<TEXT>"), DataType::Char, text_size, mmu, page_table);
+    allocateVariable(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, mmu, page_table);
+    allocateVariable(processPID, std::string("<STACK>"), DataType::Char, 65536, mmu, page_table);
     //   - print pid
-    mmu->print();
+    //mmu->print();
     std::cout << processPID << std::endl;
 }
 
@@ -124,6 +120,10 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
     //   - if no hole is large enough, allocate new page(s)
     //   - insert variable into MMU
+    mmu->addVariableToProcess(processPID, std::string("<TEXT>"), DataType::Char, text_size, 0);
+    mmu->addVariableToProcess(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, text_size);
+    mmu->addVariableToProcess(processPID, std::string("<STACK>"), DataType::Char, 65536, text_size+data_size);
+    mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print virtual memory address
 
 
