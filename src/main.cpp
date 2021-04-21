@@ -110,7 +110,7 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     allocateVariable(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, mmu, page_table);
     allocateVariable(processPID, std::string("<STACK>"), DataType::Char, 65536, mmu, page_table);
     //   - print pid
-    //mmu->print();
+    mmu->print();
     std::cout << processPID << std::endl;
 }
 
@@ -119,11 +119,12 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     // TODO: implement this!
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
     //   - if no hole is large enough, allocate new page(s)
+    //page_table->print();
+
     //   - insert variable into MMU
-    mmu->addVariableToProcess(processPID, std::string("<TEXT>"), DataType::Char, text_size, 0);
-    mmu->addVariableToProcess(processPID, std::string("<GLOBALS>"), DataType::Char, data_size, text_size);
-    mmu->addVariableToProcess(processPID, std::string("<STACK>"), DataType::Char, 65536, text_size+data_size);
-    mmu->shiftFreespace(processPID, text_size+data_size+65536);
+    //mmu->addVariableToProcess(pid, var_name, type, num_elements, address);
+
+    //mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print virtual memory address
 
 
