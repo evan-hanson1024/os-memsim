@@ -43,6 +43,8 @@ int main(int argc, char **argv)
     std::vector<std::string> v;
     int text_size;
     int data_size;
+    uint32_t pid;
+    std::string var_name;
     while (command != "exit") {
         // Handle command
         // TODO: implement this!
@@ -58,13 +60,31 @@ int main(int argc, char **argv)
                 createProcess(text_size, data_size, mmu, page_table);
             }
         }else if(v[0] == "allocate"){
-
+            pid = stoi(v[1]);
+            var_name = v[2];
+            DataType type = stodt(v[3]);
+            uint32_t num_elems = v[4];
+            allocateVariable(pid, var_name, type, num_elems, mmu, page_table);
         }else if(v[0] == "set"){
-
+            pid = stoi(v[1]);
+            var_name = v[2];
+            uint32_t offset = stoi(v[3]);
+            for(int i = 4; i < v.size(); i++){
+                void * value;
+                try{
+                    value = (void *)stoi(v[i]); // try to turn into regular integer so the value isnt ascii based
+                }catch(){
+                    value = (void *)v[i][0]; // just throw the character in there
+                }
+                setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+            }
         }else if(v[0] == "free"){
-            freeVariable(stoi(v[1]), v[2], mmu, page_table);
+            pid = stoi(v[1]);
+            var_name = v[2];
+            freeVariable(pid, var_name, mmu, page_table);
         }else if(v[0] == "terminate"){
-            terminateProcess(stoi(v[1]), mmu, page_table);
+            pid = stoi(v[1]);
+            terminateProcess(pid, mmu, page_table);
         }else if(v[0] == "print"){
             
         }
@@ -82,7 +102,25 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
+DataType stodt(std::string in){
+    DataType out;
+    if(in == "int"){
+        out = DataType::Int;
+    }else if(in == "char"){
+        out = DataType::Int;
+    }else if(in == "long"){
+        out = DataType::Int;
+    }else if(in == "short"){
+        out = DataType::Int;
+    }else if(in == "float"){
+        out = DataType::Int;
+    }else if(in == "double"){
+        out = DataType::Double
+    }else{
+        out = DataType::FreeSpace;
+    }
+    return out;
+}
 void printStartMessage(int page_size)
 {
     std::cout << "Welcome to the Memory Allocation Simulator! Using a page size of " << page_size << " bytes." << std:: endl;
