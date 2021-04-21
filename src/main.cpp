@@ -13,6 +13,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void splitString(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
+int getVariableSize(DataType type, uint32_t num_elements);
 
 int main(int argc, char **argv)
 {
@@ -113,6 +114,21 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     //mmu->print();
     std::cout << processPID << std::endl;
 }
+int getVariableSize(DataType type, uint32_t num_elements){
+    int value = 0;
+    //not sure how c++ switch syntax works, might need to change this
+    
+    if( type == Datatype::Short || type == Datatype::Char){
+        value = 2 * num_elements;
+
+    }else if (type == Datatype::Int || type == Datatype::Float){
+         value = 4 * num_elements;
+    }else if(type == Datatype::Long || type == Datatype::Double){
+        value = 8 * num_elements;
+    }
+    return value;
+
+}
 
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
 {
@@ -121,6 +137,18 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     bool holeFound = false;
     int i;
     int tableSize = page_table->getTableSize();
+    int page = -1;
+    int variable_size = getVariableSize(type, num_elements);
+    std::vector<Variable> variables = mmu->getVariables(pid);
+
+
+    //go through every variable in a process to check if there is room at the same page
+    // do this with the virtual addresses?
+    // check distance between previous and current variable
+    // if the distance is >= type * num_elements we have a room between the variables
+    // then we can insert there
+    // if not we continue to the next page
+
     for (i = 0; i < tableSize; i++) {
         if (page_table->countMatches(pid, i) > 0) {
             //Found a page already allocated to this process
@@ -130,12 +158,12 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     }
     //   - if no hole is large enough, allocate new page(s)
     if (!holeFound) {
-        page_table->addEntry(pid, page_table->getTableSize());
+        page_table->addEntry(pid, page_table->getNextPage());
     }
     page_table->print();
 
     //   - insert variable into MMU
-    //mmu->addVariableToProcess(pid, var_name, type, num_elements, address);
+    mmu->addVariableToProcess(pid, var_name, type, num_elements, address);
 
     //mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print virtual memory address

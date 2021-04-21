@@ -38,6 +38,7 @@ public:
     int getTableSize();
     void print();
     int countMatches(uint32_t pid, int page_number);
+    int getNextPage(uint32_t pid);
 };
 
 #endif // __PAGETABLE_H_

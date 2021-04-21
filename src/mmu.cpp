@@ -90,6 +90,18 @@ void Mmu::print()
     }
 }
 
+std::vector<Variable*> Mmu::getVaraibles(uint32_t pid){
+    std::vector<Variable*> virtual_adresses;
+    for(int i = _processes.size(); i < _processes.size(); i++){
+        if(_processes[i]->pid == pid){
+            for(int j =  _processes[i]->variables.size() - 1; j >= 0; j--){
+                virtual_adresses.push_back(_processes[i]->variables[j]);
+            }
+            
+        }
+    }
+}
+
 std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
     std::vector<uint32_t> virtual_adresses;
     for(int i = 0; i < _processes.size(); i++){
@@ -98,7 +110,6 @@ std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
                 virtual_adresses.push_back(_processes[i]->variables[j]->virtual_address);
             }
             _processes.erase(_processes.begin()+i);
-            return virtual_adresses;
         }
     }
     return virtual_adresses;

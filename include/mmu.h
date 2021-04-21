@@ -33,6 +33,7 @@ public:
     void addVariableToProcess(uint32_t pid, std::string var_name, DataType type, uint32_t size, uint32_t address);
     void print();
     std::vector<uint32_t> removeProcess(uint32_t pid);
+    std::vector<uint32_t> getVaraibles(uint32_t pid);
     void removeVariable(uint32_t pid, std::string var_name);
     void shiftFreespace(uint32_t pid, uint32_t new_address);
 };
