@@ -30,7 +30,7 @@ void PageTable::addEntry(uint32_t pid, int page_number)
 {
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
-
+    
     int frame = -1; 
     // Find free frame
     std::map<std::string, int>::iterator it;
@@ -47,7 +47,6 @@ void PageTable::addEntry(uint32_t pid, int page_number)
         }
         i++; //move one page of frame at the time.
     }
-
     _table[entry] = frame; // will crash when no frame is found
 }
 
@@ -55,12 +54,11 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
 {
     // Convert virtual address to page_number and page_offset
     int n = (int) log2(_page_size);
-    int page_number = virtual_address >> n; // virtual address / _page_size 
-    int page_offset = virtual_address & (_page_size - 1); // virtual_address % _page_size
+    int page_number = virtual_address / _page_size; // virtual_address >> n;
+    int page_offset = virtual_address % _page_size; //virtual_address & (_page_size - 1); 
 
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
-    
     // If entry exists, look up frame number and convert virtual to physical address
     int address = -1;
     if (_table.count(entry) > 0)
@@ -80,9 +78,6 @@ void PageTable::print()
     std::cout << "------+-------------+--------------" << std::endl;
 
     std::vector<std::string> keys = sortedKeys();
-
-    
-        
     for (i = 0; i < keys.size(); i++)
     {
         size_t sep1 = keys[i].find("|");
@@ -94,23 +89,21 @@ void PageTable::print()
     }
 }
 
-int PageTable::getNextPage(uint32_t pid){
-    int i = 0;
-    std::string  entry = std::to_string(pid) + "|" + std::to_string(i); 
-
-
-    while(_table.find(entry) != _table.end()){
-        i++;//increment i until the next page is found  
-        entry = std::to_string(pid) + "|" + std::to_string(i);
-    } 
-        
-        
-
-    return i;
+int PageTable::getPageSize(){
+    return _page_size;
 }
 
 int PageTable::getTableSize() {
     return _table.size();
+}
+int PageTable::getNextPage(uint32_t pid){
+    int i = 0;
+    std::string  entry = std::to_string(pid) + "|" + std::to_string(i); 
+    while(_table.find(entry) != _table.end()){
+        i++;//increment i until the next page is found  
+        entry = std::to_string(pid) + "|" + std::to_string(i);
+    } 
+    return i;
 }
 
 int PageTable::countMatches(uint32_t pid, int page_number) {

@@ -72,10 +72,11 @@ int main(int argc, char **argv)
             uint32_t offset = stoi(v[3]);
             for(int i = 4; i < v.size(); i++){
                 void * value;
+                double in = stod(v[1]);
                 try{
-                    value = (void *)stoi(v[i]); // try to turn into regular integer so the value isnt ascii based
+                    value = (void *)&in; // try to turn into regular integer so the value isnt ascii based
                 }catch(const std::invalid_argument& ia){
-                    value = (void *)v[i][0]; // just throw the character in if it fails lol
+                    value = (void *)v[i][0]; // just throw the character in if it fails 
                 }
                 setVariable(pid, var_name, offset, value, mmu, page_table, memory);
             }
@@ -175,7 +176,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
     bool holeFound = false;
     int i;
-    int pageSize = page_table->getTableSize();
+    int pageSize = page_table->getPageSize();
     int page = -1;
     int variable_size = getVariableSize(type, num_elements);
     std::vector<Variable*> variables = mmu->getVariables(pid);
@@ -193,26 +194,37 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         if (space_between >= variable_size) { //the space between two variables are larger than the variable size
             //Found a page already allocated to this process
             holeFound = true;
-            page = variables[i - 1]->virtual_address / pageSize;
             address = variables[i - 1]->virtual_address + variables[i - 1]->size;
+        }
+    }
+
+    //check the last hole
+    if(!holeFound){
+        int old_address = 0;
+        if(variables.size() > 0) {
+            old_address = variables[variables.size() - 1]->virtual_address;
+            address =  old_address + variables[variables.size() - 1 ]->size;
+            
+        }else{
+            address = 0; //if there are no variables, the address starts at 0
+        }
+        int space_left = address % variable_size;
+        if((address)/pageSize == old_address/pageSize && space_left >= variable_size){ //same page and room for the variable
+            holeFound = true;
         }
     }
     //   - if no hole is large enough, allocate new page(s)
     if (!holeFound) {
-        page = page_table->getNextPage(pid);
-        page_table->addEntry(pid, page);
-        if(variables.size() > 0) {
-            address = variables[variables.size() - 1]->virtual_address + variables[variables.size() - 1 ]->size;
-        }else{
-            address = 0; //if there are no variables, the address starts at 0
-        }   
+        for(int i = page_table->getNextPage(pid); i <= (address + variable_size)/pageSize; i++){
+            page = i;
+            page_table->addEntry(pid, page);
+        }
     }
     //   - insert variable into MMU
     mmu->addVariableToProcess(pid, var_name, type, variable_size, address);
 
     //mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print virtual memory address
-    mmu->print();
     if(var_name != "<TEXT>" && var_name != "<GLOBALS>" && var_name != "<STACK>"){
         std::cout << address << std::endl;
     }
@@ -224,13 +236,20 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     // TODO: implement this!
     //   - look up physical address for variable based on its virtual address / offset
     int physical_address = page_table->getPhysicalAddress(pid, mmu->getVirtualAddress(pid, var_name) + offset);
+    if(physical_address == -1){
+        std::cout << "error: variable not found"<< std::endl;
+        return; // return early so no damage is done.
+    }
     DataType type = mmu->getDataType(pid, var_name);
-    if(type == DataType::Char || type == DataType::Short){
-        memcpy(((uint32_t*)(memory))+physical_address, value, 2);
+    char * memory_location = (char *)(memory) + physical_address;
+    if(type == DataType::Char){
+        memcpy(memory_location, &value, 1);
+    }else if (type == DataType::Short){
+        memcpy(memory_location, &value, 2);
     }else if(type == DataType::Int || type == DataType::Float){
-        memcpy(((uint32_t*)(memory))+physical_address, value, 4);
+        memcpy(memory_location, &value, 4);
     }else if(type == DataType::Long || type == DataType::Double){
-        memcpy(((uint32_t*)(memory))+physical_address, value, 8);
+        memcpy(memory_location, &value, 8);
     }
     //   - insert `value` into `memory` at physical address
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
