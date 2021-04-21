@@ -88,6 +88,24 @@ void PageTable::print()
         
     }
 }
+void PageTable::freePage(uint32_t pid, int page){
+    std::string entry = std::to_string(pid) + "|" + std::to_string(page);
+    if(_table.count(entry) > 0){
+        _table.erase(entry);
+    }
+}
+std::vector<std::string> PageTable::getPages(uint32_t pid){
+    int i = 0;
+    std::vector<std::string> out;
+    std::string entry = std::to_string(pid) + "|" + std::to_string(i);
+    while(_table.count(entry) > 0){
+        out.push_back(entry);
+        i++;
+        entry = std::to_string(pid) + "|" + std::to_string(i);
+    }
+    return out;
+}
+
 
 int PageTable::getPageSize(){
     return _page_size;

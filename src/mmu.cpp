@@ -154,6 +154,7 @@ std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
                 virtual_adresses.push_back(_processes[i]->variables[j]->virtual_address);
             }
             _processes.erase(_processes.begin()+i);
+            i--;
         }
     }
     return virtual_adresses;
@@ -165,6 +166,7 @@ void Mmu::removeVariable(uint32_t pid, std::string var_name){
             for(int j = 0; _processes[i]->variables.size(); j++){
                 if(_processes[i]->variables[j]->name == var_name){
                     _processes[i]->variables.erase(_processes[i]->variables.begin()+j);
+                    return; //just return out of the function after the variable is removed
                 }
             }
         }

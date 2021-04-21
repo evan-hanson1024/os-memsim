@@ -40,6 +40,9 @@ public:
     int countMatches(uint32_t pid, int page_number);
     int getPageSize();
     int getNextPage(uint32_t pid);
+    std::vector<std::string> getPages(uint32_t pid);
+    void freePage(uint32_t pid, int page);
+
 };
 
 #endif // __PAGETABLE_H_

@@ -260,8 +260,20 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 {
     // TODO: implement this!
     //   - remove entry from MMU
+    if(mmu->getVirtualAddress(pid, var_name) == -1){
+        std::cout << "error: variables doesn't exist" << std::endl;
+        return;
+    }
     mmu->removeVariable(pid, var_name);
     //   - free page if this variable was the only one on a given page
+    
+    int page = mmu->getVirtualAddress(pid, var_name) / page_table->getPageSize();
+    std::vector<std::string> pages = page_table->getPages(pid);
+
+    std::string entry = std::to_string(pid) + "|" + std::to_string(page);
+    if(std::find(pages.begin(), pages.end(), entry) == pages.end()){
+        page_table->freePage(pid, page);
+    }
 }
 
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
@@ -270,8 +282,11 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
     //   - remove process from MMU
     std::vector<uint32_t> virtualAddresses = mmu->removeProcess(pid);
     //   - free all pages associated with given process
+    uint32_t virual_address;
     for (int i = 0; i < virtualAddresses.size(); i++) {
         //TODO: free all pages
+        virual_address = virtualAddresses[i];
+        page_table->freePage(pid, virual_address/page_table->getPageSize());
     }
 }
 
