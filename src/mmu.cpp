@@ -99,6 +99,10 @@ void Mmu::print()
     }
 }
 
+bool compareVariables(Variable *a, Variable *b){
+    return a->virtual_address < b->virtual_address;
+}
+
 std::vector<Variable*> Mmu::getVariables(uint32_t pid){
     std::vector<Variable*> variables;
     for(int i = 0; i < _processes.size(); i++){
@@ -110,7 +114,7 @@ std::vector<Variable*> Mmu::getVariables(uint32_t pid){
             }
         }
     }
-    std::sort(variables.begin(), variables.end(), compare_variables); // have all the variables in sorted order
+    std::sort(variables.begin(), variables.end(), compareVariables); // have all the variables in sorted order
     return variables;
 }
 
@@ -119,11 +123,12 @@ uint32_t Mmu::getVirtualAddress(uint32_t pid, std::string var_name){
         if(_processes[i]->pid == pid){
             for(int j = 0; j < _processes[i]->variables.size(); j++){
                 if(_processes[i]->variables[j]->name == var_name){
-                    return _processes[i]->variables[j]->virtual_addres;
+                    return _processes[i]->variables[j]->virtual_address;
                 }
             }
         }
     }
+    return -1; //return max value, no address found. 
 }
 
 DataType Mmu::getDataType(uint32_t pid, std::string var_name){
@@ -136,11 +141,10 @@ DataType Mmu::getDataType(uint32_t pid, std::string var_name){
             }
         }
     }
+    return DataType::FreeSpace; // shouldnt happen
 }
 
-bool compare_variables(Variable &a, Variable &b){
-    return a.virtual_address < b.virtual_address;
-}
+
 
 std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
     std::vector<uint32_t> virtual_adresses;

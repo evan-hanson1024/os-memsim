@@ -14,6 +14,7 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void splitString(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
 int getVariableSize(DataType type, uint32_t num_elements);
+DataType stodt(std::string in);
 
 int main(int argc, char **argv)
 {
@@ -63,7 +64,7 @@ int main(int argc, char **argv)
             pid = stoi(v[1]);
             var_name = v[2];
             DataType type = stodt(v[3]);
-            uint32_t num_elems = v[4];
+            uint32_t num_elems = stoi(v[4]);
             allocateVariable(pid, var_name, type, num_elems, mmu, page_table);
         }else if(v[0] == "set"){
             pid = stoi(v[1]);
@@ -73,8 +74,8 @@ int main(int argc, char **argv)
                 void * value;
                 try{
                     value = (void *)stoi(v[i]); // try to turn into regular integer so the value isnt ascii based
-                }catch(){
-                    value = (void *)v[i][0]; // just throw the character in there
+                }catch(const std::invalid_argument& ia){
+                    value = (void *)v[i][0]; // just throw the character in if it fails lol
                 }
                 setVariable(pid, var_name, offset, value, mmu, page_table, memory);
             }
@@ -115,7 +116,7 @@ DataType stodt(std::string in){
     }else if(in == "float"){
         out = DataType::Int;
     }else if(in == "double"){
-        out = DataType::Double
+        out = DataType::Double;
     }else{
         out = DataType::FreeSpace;
     }
@@ -155,8 +156,9 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 int getVariableSize(DataType type, uint32_t num_elements){
     int value = 0;
     //not sure how c++ switch syntax works, might need to change this
-    
-    if( type == DataType::Short || type == DataType::Char){
+    if(type == DataType::Char){
+        value = num_elements;
+    }else if( type == DataType::Short){
         value = 2 * num_elements;
     }else if (type == DataType::Int || type == DataType::Float){
          value = 4 * num_elements;
@@ -200,17 +202,17 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         page = page_table->getNextPage(pid);
         page_table->addEntry(pid, page);
         if(variables.size() > 0) {
-            address = variables[variables.size() - 1]->virtual_address + variables[variables.size() - 1]->size;
+            address = variables[variables.size() - 1]->virtual_address + variables[variables.size() - 1 ]->size;
         }else{
             address = 0; //if there are no variables, the address starts at 0
         }   
     }
     //   - insert variable into MMU
-    mmu->addVariableToProcess(pid, var_name, type, num_elements, address);
+    mmu->addVariableToProcess(pid, var_name, type, variable_size, address);
 
     //mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print virtual memory address
-    
+    mmu->print();
     if(var_name != "<TEXT>" && var_name != "<GLOBALS>" && var_name != "<STACK>"){
         std::cout << address << std::endl;
     }
@@ -224,11 +226,11 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     int physical_address = page_table->getPhysicalAddress(pid, mmu->getVirtualAddress(pid, var_name) + offset);
     DataType type = mmu->getDataType(pid, var_name);
     if(type == DataType::Char || type == DataType::Short){
-        memcpy((memory+physical_address), value, 2);
+        memcpy(((uint32_t*)(memory))+physical_address, value, 2);
     }else if(type == DataType::Int || type == DataType::Float){
-        memcpy((memory+physical_address), value, 4);
+        memcpy(((uint32_t*)(memory))+physical_address, value, 4);
     }else if(type == DataType::Long || type == DataType::Double){
-        memcpy((memory+physical_address), value, 8);
+        memcpy(((uint32_t*)(memory))+physical_address, value, 8);
     }
     //   - insert `value` into `memory` at physical address
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
