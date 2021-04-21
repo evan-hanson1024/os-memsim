@@ -77,3 +77,18 @@ void PageTable::print()
         
     }
 }
+
+int PageTable::getTableSize() {
+    return _table.size();
+}
+
+int PageTable::countMatches(uint32_t pid, int page_number) {
+    // Combination of pid and page number act as the key to look up frame number
+    std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
+    int count = 0;
+
+    if (_table.count(entry) > 0) {
+        count++;
+    }
+    return count;
+}

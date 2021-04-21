@@ -118,7 +118,18 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 {
     // TODO: implement this!
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
+    bool holeFound = false;
+    int i;
+    std::cout << page_table->getTableSize() << std::endl;
+    for (i = 0; i < page_table->getTableSize(); i++) {
+        if (page_table->countMatches(pid, i) > 0) {
+            //Found a page already allocated to this process
+        }
+    }
     //   - if no hole is large enough, allocate new page(s)
+    if (!holeFound) {
+        page_table->addEntry(pid, page_table->getTableSize()+1);
+    }
     //page_table->print();
 
     //   - insert variable into MMU
