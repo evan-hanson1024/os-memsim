@@ -149,7 +149,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     // if not we continue to the next page
     int space_between;
     for (i = 1; i < variables.size() && !holeFound; i++) {
-        space_between = variables[i]->virtual_address - variables[i - 1]->virtual_address - variables[i - 1]->size;
+        space_between = variables[i]->virtual_address - variables[i - 1]->virtual_address - variables[i - 1]->size; // check if there is space bet
         if (space_between >= variable_size) { //the space between two variables are larger than the variable size
             //Found a page already allocated to this process
             holeFound = true;
@@ -165,13 +165,8 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
             address = variables[variables.size() - 1]->virtual_address + variables[variables.size() - 1]->size;
         }else{
             address = 0; //if there are no variables, the address starts at 0
-        }
-
-        
+        }   
     }
-    
-
-
     //   - insert variable into MMU
     mmu->addVariableToProcess(pid, var_name, type, num_elements, address);
 
@@ -188,6 +183,15 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
 {
     // TODO: implement this!
     //   - look up physical address for variable based on its virtual address / offset
+    int physical_address = page_table->getPhysicalAddress(pid, mmu->getVirtualAddress(pid, var_name) + offset);
+    DataType type = mmu->getDataType(pid, var_name);
+    if(type == DataType::Char || type == DataType::Short){
+        memcpy((memory+physical_address), value, 2);
+    }else if(type == DataType::Int || type == DataType::Float){
+        memcpy((memory+physical_address), value, 4);
+    }else if(type == DataType::Long || type == DataType::Double){
+        memcpy((memory+physical_address), value, 8);
+    }
     //   - insert `value` into `memory` at physical address
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
     //           multiple elements of an array)

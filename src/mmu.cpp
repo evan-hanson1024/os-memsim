@@ -1,6 +1,6 @@
 #include "mmu.h"
 #include  <iomanip>
-
+#include <algorithm>
 Mmu::Mmu(int memory_size)
 {
     _next_pid = 1024;
@@ -108,10 +108,38 @@ std::vector<Variable*> Mmu::getVariables(uint32_t pid){
                     variables.push_back(_processes[i]->variables[j]);
                 }
             }
-            
         }
     }
+    std::sort(variables.begin(), variables.end(), compare_variables); // have all the variables in sorted order
     return variables;
+}
+
+uint32_t Mmu::getVirtualAddress(uint32_t pid, std::string var_name){
+    for(int i = 0; i < _processes.size(); i++){
+        if(_processes[i]->pid == pid){
+            for(int j = 0; j < _processes[i]->variables.size(); j++){
+                if(_processes[i]->variables[j]->name == var_name){
+                    return _processes[i]->variables[j]->virtual_addres;
+                }
+            }
+        }
+    }
+}
+
+DataType Mmu::getDataType(uint32_t pid, std::string var_name){
+    for(int i = 0; i < _processes.size(); i++){
+        if(_processes[i]->pid == pid){
+            for(int j = 0; j < _processes[i]->variables.size(); j++){
+                if(_processes[i]->variables[j]->name == var_name){
+                    return _processes[i]->variables[j]->type;
+                }
+            }
+        }
+    }
+}
+
+bool compare_variables(Variable &a, Variable &b){
+    return a.virtual_address < b.virtual_address;
 }
 
 std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
