@@ -118,12 +118,11 @@ int getVariableSize(DataType type, uint32_t num_elements){
     int value = 0;
     //not sure how c++ switch syntax works, might need to change this
     
-    if( type == Datatype::Short || type == Datatype::Char){
+    if( type == DataType::Short || type == DataType::Char){
         value = 2 * num_elements;
-
-    }else if (type == Datatype::Int || type == Datatype::Float){
+    }else if (type == DataType::Int || type == DataType::Float){
          value = 4 * num_elements;
-    }else if(type == Datatype::Long || type == Datatype::Double){
+    }else if(type == DataType::Long || type == DataType::Double){
         value = 8 * num_elements;
     }
     return value;
@@ -136,11 +135,11 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
     bool holeFound = false;
     int i;
-    int tableSize = page_table->getTableSize();
+    int pageSize = page_table->getTableSize();
     int page = -1;
     int variable_size = getVariableSize(type, num_elements);
-    std::vector<Variable> variables = mmu->getVariables(pid);
-
+    std::vector<Variable*> variables = mmu->getVariables(pid);
+    int address = 0;
 
     //go through every variable in a process to check if there is room at the same page
     // do this with the virtual addresses?
@@ -148,26 +147,40 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     // if the distance is >= type * num_elements we have a room between the variables
     // then we can insert there
     // if not we continue to the next page
-
-    for (i = 0; i < tableSize; i++) {
-        if (page_table->countMatches(pid, i) > 0) {
+    int space_between;
+    for (i = 1; i < variables.size() && !holeFound; i++) {
+        space_between = variables[i]->virtual_address - variables[i - 1]->virtual_address - variables[i - 1]->size;
+        if (space_between >= variable_size) { //the space between two variables are larger than the variable size
             //Found a page already allocated to this process
             holeFound = true;
-            //TODO: Determine if this hole is big enough
+            page = variables[i - 1]->virtual_address / pageSize;
+            address = variables[i - 1]->virtual_address + variables[i - 1]->size;
         }
     }
     //   - if no hole is large enough, allocate new page(s)
     if (!holeFound) {
-        page_table->addEntry(pid, page_table->getNextPage());
+        page = page_table->getNextPage(pid);
+        page_table->addEntry(pid, page);
+        if(variables.size() > 0) {
+            address = variables[variables.size() - 1]->virtual_address + variables[variables.size() - 1]->size;
+        }else{
+            address = 0; //if there are no variables, the address starts at 0
+        }
+
+        
     }
-    page_table->print();
+    
+
 
     //   - insert variable into MMU
     mmu->addVariableToProcess(pid, var_name, type, num_elements, address);
 
     //mmu->shiftFreespace(processPID, text_size+data_size+65536);
     //   - print virtual memory address
-
+    
+    if(var_name != "<TEXT>" && var_name != "<GLOBALS>" && var_name != "<STACK>"){
+        std::cout << address << std::endl;
+    }
 
 }
 

@@ -45,7 +45,7 @@ void PageTable::addEntry(uint32_t pid, int page_number)
         if(frames.find(i) == frames.end()){ // entry not found, use this frame
             frame = i;
         }
-        i++; //increment i until a frame is found
+        i++; //move one page of frame at the time.
     }
 
     _table[entry] = frame; // will crash when no frame is found
@@ -81,9 +81,14 @@ void PageTable::print()
 
     std::vector<std::string> keys = sortedKeys();
 
+    
+        
     for (i = 0; i < keys.size(); i++)
     {
-        std::cout << keys[i] << "|";
+        size_t sep1 = keys[i].find("|");
+        uint32_t pid = std::stoi(keys[i].substr(0, sep1));
+        int page = std::stoi(keys[i].substr(sep1 + 1));
+        std::cout << pid << "  |\t\t   " << page << "|\t\t";
         std::cout << _table.at(keys[i]) << std::endl;
         
     }

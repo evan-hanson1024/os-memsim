@@ -1,4 +1,5 @@
 #include "mmu.h"
+#include  <iomanip>
 
 Mmu::Mmu(int memory_size)
 {
@@ -75,31 +76,42 @@ void Mmu::print()
 
     std::cout << " PID  | Variable Name | Virtual Addr | Size" << std::endl;
     std::cout << "------+---------------+--------------+------------" << std::endl;
+
+    size_t headerWidth[4] ={
+        std::string(" PID  ").size(),
+        std::string(" Variable Name ").size(),
+        std::string(" Virtual Addr ").size(),
+        std::string(" Size").size()
+    };
+
     for (i = 0; i < _processes.size(); i++)
     {
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
             // TODO: print all variables (excluding <FREE_SPACE> entries)
             if(_processes[i]->variables[j]->name != "<FREE_SPACE>" ){
-                std::cout << _processes[i]->pid << "|";
-                std::cout << _processes[i]->variables[j]->name << "|";
-                std::cout << _processes[i]->variables[j]->virtual_address << "|";
-                std::cout << _processes[i]->variables[j]->size << std::endl;
+                std::cout << std::left << std::setw(headerWidth[0]) << _processes[i]->pid << "|";
+                std::cout << std::setw(headerWidth[1]) << _processes[i]->variables[j]->name << "|";
+                std::cout << std::right << std::setw(headerWidth[2] - 8)<< "0x" << std::setfill('0') << std::setw(8) << std::hex << _processes[i]->variables[j]->virtual_address << "|";
+                std::cout << std::setfill(' ') << std::setw(headerWidth[3]) << std::dec << _processes[i]->variables[j]->size << std::endl;
             }
         }
     }
 }
 
-std::vector<Variable*> Mmu::getVaraibles(uint32_t pid){
-    std::vector<Variable*> virtual_adresses;
-    for(int i = _processes.size(); i < _processes.size(); i++){
+std::vector<Variable*> Mmu::getVariables(uint32_t pid){
+    std::vector<Variable*> variables;
+    for(int i = 0; i < _processes.size(); i++){
         if(_processes[i]->pid == pid){
-            for(int j =  _processes[i]->variables.size() - 1; j >= 0; j--){
-                virtual_adresses.push_back(_processes[i]->variables[j]);
+            for(int j = 0; j < _processes[i]->variables.size(); j++){
+                if(_processes[i]->variables[j]->name != "<FREE_SPACE>"){
+                    variables.push_back(_processes[i]->variables[j]);
+                }
             }
             
         }
     }
+    return variables;
 }
 
 std::vector<uint32_t> Mmu::removeProcess(uint32_t pid){
