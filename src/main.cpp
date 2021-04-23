@@ -88,7 +88,18 @@ int main(int argc, char **argv)
             pid = stoi(v[1]);
             terminateProcess(pid, mmu, page_table);
         }else if(v[0] == "print"){
-            
+            if (v[1] == "processes") {
+                //Print all PIDs
+
+            } else if (v[1] == "mmu") {
+                //Print MMU values
+                mmu->print();
+            } else if (v[1] == "page") {
+                //Print page table values
+                page_table->print();
+            }
+        } else {
+            printf("error: command not recognized\n");
         }
 
 
