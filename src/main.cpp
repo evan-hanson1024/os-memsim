@@ -90,7 +90,10 @@ int main(int argc, char **argv)
         }else if(v[0] == "print"){
             if (v[1] == "processes") {
                 //Print all PIDs
-
+                std::vector<std::string> v = mmu->getProcesses();
+                for (int i = 0; i < v.size(); i++) {
+                    std::cout << v[i] << std::endl;
+                }
             } else if (v[1] == "mmu") {
                 //Print MMU values
                 mmu->print();

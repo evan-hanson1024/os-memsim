@@ -11,6 +11,14 @@ Mmu::~Mmu()
 {
 }
 
+std::vector<std::string> Mmu::getProcesses() {
+    std::vector<std::string> v;
+    for (int i = 0; i < _processes.size(); i++) {
+        v.push_back(std::to_string(_processes[i]->pid));
+    }
+    return v;
+}
+
 void Mmu::shiftFreespace(uint32_t pid, uint32_t new_address) {
     int i;
     int j;
