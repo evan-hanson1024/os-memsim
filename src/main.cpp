@@ -12,6 +12,7 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void splitString(std::string s, std::vector<std::string> &v);
+void splitArgument(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
 int getVariableSize(DataType type, uint32_t num_elements);
 DataType stodt(std::string in);
@@ -90,9 +91,9 @@ int main(int argc, char **argv)
         }else if(v[0] == "print"){
             if (v[1] == "processes") {
                 //Print all PIDs
-                std::vector<std::string> v = mmu->getProcesses();
-                for (int i = 0; i < v.size(); i++) {
-                    std::cout << v[i] << std::endl;
+                std::vector<std::string> processes = mmu->getProcesses();
+                for (int i = 0; i < processes.size(); i++) {
+                    std::cout << processes[i] << std::endl;
                 }
             } else if (v[1] == "mmu") {
                 //Print MMU values
@@ -100,8 +101,26 @@ int main(int argc, char **argv)
             } else if (v[1] == "page") {
                 //Print page table values
                 page_table->print();
+            } else {
+                //Print the value of the variable for a given PID
+                std::vector<std::string> arguments;
+                std::vector<Process*> processes = mmu->getFullProcesses();
+                splitArgument(v[1], arguments);
+
+                for (int process_index = 0; process_index < processes.size(); process_index++) {
+                    if (processes[process_index]->pid == stoul(arguments[0])) {
+                        std::vector<Variable*> variables = mmu->getVariables(processes[process_index]->pid);
+                        for (int variable_index = 0; variable_index < variables.size(); variable_index++) {
+                            if (variables[variable_index]->name == arguments[1]) {
+                                int physical_address = page_table->getPhysicalAddress(stoi(arguments[0]), variables[variable_index]->virtual_address);
+                                char * memory_location = (char *)(memory) + physical_address;
+                                std::cout << *memory_location << std::endl;
+                            }
+                        }
+                    }
+                }
             }
-        } else {
+        } else if (command.size() > 0) {
             printf("error: command not recognized\n");
         }
 
@@ -310,6 +329,24 @@ void splitString(std::string s, std::vector<std::string> &v) {
 	for(int i=0; i < s.length(); i++){
 		
 		if(s[i]==' '){
+			v.push_back(temp);
+			temp = "";
+		}
+		else{
+			temp.push_back(s[i]);
+		}
+		
+	}
+	v.push_back(temp);
+	
+}
+
+void splitArgument(std::string s, std::vector<std::string> &v) {
+	
+	std::string temp = "";
+	for(int i=0; i < s.length(); i++){
+		
+		if(s[i]==':'){
 			v.push_back(temp);
 			temp = "";
 		}

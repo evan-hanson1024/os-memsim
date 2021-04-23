@@ -39,6 +39,7 @@ public:
     DataType getDataType(uint32_t pid, std::string var_name);
     void removeVariable(uint32_t pid, std::string var_name);
     void shiftFreespace(uint32_t pid, uint32_t new_address);
+    std::vector<Process*> getFullProcesses();
 };
 
 #endif // __MMU_H
