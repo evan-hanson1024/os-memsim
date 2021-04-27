@@ -212,6 +212,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     int variable_size = getVariableSize(type, num_elements);
     std::vector<Variable*> variables = mmu->getVariables(pid);
     int address = 0;
+    int count = 0;
 
     //go through every variable in a process to check if there is room at the same page
     // do this with the virtual addresses?
@@ -232,11 +233,13 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         int old_address = 0;
         if(variables.size() > 0) {
             old_address = variables[variables.size() - 1]->virtual_address;
-            address =  old_address + variables[variables.size() - 1 ]->size;
         }
-        int space_left = address % variable_size;
+        int space_left = pageSize - (address % pageSize);
         if(address/pageSize == old_address/pageSize && space_left >= variable_size){ //same page and room for the variable
-            holeFound = true;
+            holeFound = true; // holeFound for entire variable
+        }else if(space_left < getVariableSize(type, 1)){
+                mmu->addVariableToProcess(pid, "<FREE_SPACE>", DataType::FreeSpace, space_left, address);
+                address += space_left;
         }
     }
     //   - if no hole is large enough, allocate new page(s)
@@ -302,7 +305,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
             shared_page == true;
         }
     }
-    if(shared_page){
+    if(!shared_page){
         page_table->freePage(pid, page);
     }
 }
