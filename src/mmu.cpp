@@ -82,7 +82,30 @@ void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type
     var->size = size;
     if (proc != NULL)
     {
+        decreaseFreeSpace(pid, size);
         proc->variables.push_back(var);
+    }
+}
+
+void Mmu::decreaseFreeSpace(uint32_t pid, uint32_t size){
+    Process *proc = NULL;
+    for (int i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+        }
+    }
+    for(int j = 0; j < proc->variables.size(); j++){
+        if(proc->variables[j]->name == "<FREE_SPACE>"){
+            if(size == proc->variables[j]->size){
+                proc->variables.erase(proc->variables.begin() + j);
+                return; // better return after changing the var vector
+            }else{
+                proc->variables[j]->size -= size; //remove from free space
+                proc->variables[j]->virtual_address += size;
+            }
+        }
     }
 }
 
@@ -181,10 +204,60 @@ void Mmu::removeVariable(uint32_t pid, std::string var_name){
         if(_processes[i]->pid == pid){
             for(int j = 0; _processes[i]->variables.size(); j++){
                 if(_processes[i]->variables[j]->name == var_name){
-                    _processes[i]->variables.erase(_processes[i]->variables.begin()+j);
+                    _processes[i]->variables[j]->name = "<FREE_SPACE>";
+                    _processes[i]->variables[j]->type = DataType::FreeSpace;
+                    mergeFreeSpace(i, j);
                     return; //just return out of the function after the variable is removed
                 }
             }
         }
     }
+}
+
+void Mmu::mergeFreeSpace(int i, int j){
+    if(j > 0 && _processes[i]->variables[j - 1]->name == "<FREE_SPACE>"){
+         _processes[i]->variables[j]->size += _processes[i]->variables[j - 1]->size;
+         _processes[i]->variables[j]->virtual_address = _processes[i]->variables[j - 1]->virtual_address;
+         _processes[i]->variables.erase(_processes[i]->variables.begin() + j - 1);
+         j--;
+    }
+
+    if(j < _processes[i]->variables.size() - 1 && _processes[i]->variables[j + 1]->name == "<FREE_SPACE>"){
+        _processes[i]->variables[j]->size += _processes[i]->variables[j + 1]->size;
+        _processes[i]->variables.erase(_processes[i]->variables.begin() + j + 1);
+    }
+}
+
+bool Mmu::isSpace(uint32_t pid, int var_size){
+    int space_between = 0;
+    std::vector<Variable*> variables = getVariables(pid);
+    for (int i = 1; i < variables.size(); i++) {
+        space_between = variables[i]->virtual_address - variables[i - 1]->virtual_address - variables[i - 1]->size; // check if there is space between
+        if (space_between >= var_size) { //the space between two variables are larger than the variable size
+            //Found a page already allocated to this process
+            return true;
+        }
+    }
+    return false;
+}
+int Mmu::getNewAddress(uint32_t pid, int var_size, bool hasHole){
+    std::vector<Variable*> variables = getVariables(pid);
+    int space_between = 0;
+    int address = 0;
+    if(variables.size() == 0){ // no variables
+        return address; //new address should be 0
+    }
+
+    if(hasHole){
+        for (int i = 1; i < variables.size() && address == 0; i++) {
+        space_between = variables[i]->virtual_address - variables[i - 1]->virtual_address - variables[i - 1]->size; // check if there is space between
+            if (space_between >= var_size) { //the space between two variables are larger than the variable size
+                //Found a page already allocated to this process
+                address = variables[i - 1]->virtual_address + variables[i - 1]->size;
+            }
+        }
+    }else{
+        address = variables[variables.size() - 1]->virtual_address + variables[variables.size() - 1]->size;
+    }
+    return address;
 }

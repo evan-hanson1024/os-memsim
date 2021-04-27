@@ -24,6 +24,8 @@ private:
     uint32_t _next_pid;
     uint32_t _max_size;
     std::vector<Process*> _processes;
+    void mergeFreeSpace(int i, int j);
+
 
 public:
     Mmu(int memory_size);
@@ -40,6 +42,11 @@ public:
     void removeVariable(uint32_t pid, std::string var_name);
     void shiftFreespace(uint32_t pid, uint32_t new_address);
     std::vector<Process*> getFullProcesses();
+    bool isSpace(uint32_t pid, int var_size);
+    int getNewAddress(uint32_t pid, int var_size, bool hasHole);
+    void decreaseFreeSpace(uint32_t pid, uint32_t size);
+
+    
 };
 
 #endif // __MMU_H

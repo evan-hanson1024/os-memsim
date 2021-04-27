@@ -16,6 +16,7 @@ void splitArgument(std::string s, std::vector<std::string> &v);
 void printVector(std::vector<std::string> v);
 int getVariableSize(DataType type, uint32_t num_elements);
 DataType stodt(std::string in);
+void printVariable(void *memory, int physical_address, DataType type, int size);
 
 int main(int argc, char **argv)
 {
@@ -71,15 +72,42 @@ int main(int argc, char **argv)
             pid = stoi(v[1]);
             var_name = v[2];
             uint32_t offset = stoi(v[3]);
+            DataType type = mmu->getDataType(pid, var_name);
             for(int i = 4; i < v.size(); i++){
                 void * value;
-                double in = stod(v[1]);
-                try{
-                    value = (void *)&in; // try to turn into regular integer so the value isnt ascii based
-                }catch(const std::invalid_argument& ia){
-                    value = (void *)v[i][0]; // just throw the character in if it fails 
+                int type_size = 0;
+                if(type == DataType::Int || type == DataType::Float){
+                    value = malloc(4);
+                    value = (void*)stoi(v[i]);
+                    offset *= 4;
+                    type_size = 4;
+                }else if(type == DataType::Long) {
+                    value = malloc(8);
+                    long in = stol(v[i]);
+                    memcpy(&value, &in, 8);
+                    offset *= 8;
+                    type_size = 8;
+
+                }else if(type == DataType::Double){
+                    value = malloc(8);
+                    double in = stod(v[i]);
+                    memcpy(value, &in, 8);
+
+                    offset *= 8;
+                    type_size = 8;
+                }else if(type == DataType::Short){
+                    value = malloc(2);
+                    value = (void*)stoi(v[i]);
+                    offset *= 2;
+                    type_size = 2;
+                }else{
+                    value = malloc(1);
+                    value = (void *)v[i][0]; 
+                    type_size = 1;
                 }
+
                 setVariable(pid, var_name, offset, value, mmu, page_table, memory);
+                offset+=type_size;
             }
         }else if(v[0] == "free"){
             pid = stoi(v[1]);
@@ -109,12 +137,14 @@ int main(int argc, char **argv)
 
                 for (int process_index = 0; process_index < processes.size(); process_index++) {
                     if (processes[process_index]->pid == stoul(arguments[0])) {
+                        pid = processes[process_index]->pid;
                         std::vector<Variable*> variables = mmu->getVariables(processes[process_index]->pid);
                         for (int variable_index = 0; variable_index < variables.size(); variable_index++) {
                             if (variables[variable_index]->name == arguments[1]) {
+                                var_name = arguments[1];
+                                DataType type = mmu->getDataType(pid, var_name);
                                 int physical_address = page_table->getPhysicalAddress(stoi(arguments[0]), variables[variable_index]->virtual_address);
-                                char * memory_location = (char *)(memory) + physical_address;
-                                std::cout << *memory_location << std::endl;
+                                printVariable(memory, physical_address, type, variables[variable_index]->size);
                             }
                         }
                     }
@@ -137,25 +167,8 @@ int main(int argc, char **argv)
 
     return 0;
 }
-DataType stodt(std::string in){
-    DataType out;
-    if(in == "int"){
-        out = DataType::Int;
-    }else if(in == "char"){
-        out = DataType::Char;
-    }else if(in == "long"){
-        out = DataType::Long;
-    }else if(in == "short"){
-        out = DataType::Short;
-    }else if(in == "float"){
-        out = DataType::Float;
-    }else if(in == "double"){
-        out = DataType::Double;
-    }else{
-        out = DataType::FreeSpace;
-    }
-    return out;
-}
+
+
 void printStartMessage(int page_size)
 {
     std::cout << "Welcome to the Memory Allocation Simulator! Using a page size of " << page_size << " bytes." << std:: endl;
@@ -187,21 +200,6 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     //mmu->print();
     std::cout << processPID << std::endl;
 }
-int getVariableSize(DataType type, uint32_t num_elements){
-    int value = 0;
-    //not sure how c++ switch syntax works, might need to change this
-    if(type == DataType::Char){
-        value = num_elements;
-    }else if( type == DataType::Short){
-        value = 2 * num_elements;
-    }else if (type == DataType::Int || type == DataType::Float){
-         value = 4 * num_elements;
-    }else if(type == DataType::Long || type == DataType::Double){
-        value = 8 * num_elements;
-    }
-    return value;
-
-}
 
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
 {
@@ -221,15 +219,13 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     // if the distance is >= type * num_elements we have a room between the variables
     // then we can insert there
     // if not we continue to the next page
-    int space_between;
-    for (i = 1; i < variables.size() && !holeFound; i++) {
-        space_between = variables[i]->virtual_address - variables[i - 1]->virtual_address - variables[i - 1]->size; // check if there is space bet
-        if (space_between >= variable_size) { //the space between two variables are larger than the variable size
-            //Found a page already allocated to this process
-            holeFound = true;
-            address = variables[i - 1]->virtual_address + variables[i - 1]->size;
-        }
+    if(mmu->isSpace(pid, variable_size)){
+        address = mmu->getNewAddress(pid, variable_size, true);
+        holeFound = true;
+    }else{
+        address = mmu->getNewAddress(pid, variable_size, false);
     }
+    
 
     //check the last hole
     if(!holeFound){
@@ -237,12 +233,9 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         if(variables.size() > 0) {
             old_address = variables[variables.size() - 1]->virtual_address;
             address =  old_address + variables[variables.size() - 1 ]->size;
-            
-        }else{
-            address = 0; //if there are no variables, the address starts at 0
         }
         int space_left = address % variable_size;
-        if((address)/pageSize == old_address/pageSize && space_left >= variable_size){ //same page and room for the variable
+        if(address/pageSize == old_address/pageSize && space_left >= variable_size){ //same page and room for the variable
             holeFound = true;
         }
     }
@@ -299,12 +292,17 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
     }
     mmu->removeVariable(pid, var_name);
     //   - free page if this variable was the only one on a given page
+    bool shared_page = false;
     
     int page = mmu->getVirtualAddress(pid, var_name) / page_table->getPageSize();
     std::vector<std::string> pages = page_table->getPages(pid);
-
-    std::string entry = std::to_string(pid) + "|" + std::to_string(page);
-    if(std::find(pages.begin(), pages.end(), entry) == pages.end()){
+    std::vector<Variable*> variables = mmu->getVariables(pid);
+    for(int i = 0; i < variables.size() && !shared_page; i++){
+        if(page == variables[i]->virtual_address / page_table->getPageSize()){
+            shared_page == true;
+        }
+    }
+    if(shared_page){
         page_table->freePage(pid, page);
     }
 }
@@ -321,6 +319,22 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
         virual_address = virtualAddresses[i];
         page_table->freePage(pid, virual_address/page_table->getPageSize());
     }
+}
+
+int getVariableSize(DataType type, uint32_t num_elements){
+    int value = 0;
+    //not sure how c++ switch syntax works, might need to change this
+    if(type == DataType::Char){
+        value = num_elements;
+    }else if( type == DataType::Short){
+        value = 2 * num_elements;
+    }else if (type == DataType::Int || type == DataType::Float){
+         value = 4 * num_elements;
+    }else if(type == DataType::Long || type == DataType::Double){
+        value = 8 * num_elements;
+    }
+    return value;
+
 }
 
 void splitString(std::string s, std::vector<std::string> &v) {
@@ -363,4 +377,97 @@ void printVector(std::vector<std::string> v) {
 	for(int i=0; i < v.size(); i++)
 		std::cout << v[i] << std::endl;
 	std::cout << "\n";
+}
+
+
+ void printVariable (void* memory, int physical_address, DataType type, int size){
+    int offset;
+    int amount = 0;
+    bool overflow = false;
+    if(type == DataType::Int){
+        for(offset = 0; offset < 5*4; offset += 4){
+            int * memory_location = (int *)(memory) + physical_address + offset;
+            std::cout << *memory_location << ", ";
+            
+        }
+        if(offset > 5*4 - 1){
+            overflow = true;
+            amount = size/4;
+        }
+    }else if(type == DataType::Float){
+        for(offset = 0; offset < 5*4; offset += 4){
+            float * memory_location = (float *)(memory) + physical_address + offset;
+            std::cout << *memory_location << ", ";
+        }
+        if(offset > 5*4 - 1){
+            overflow = true;
+            amount = size/4;
+        }
+    }
+    else if(type == DataType::Long ){
+        for(offset = 0; offset < size;offset += 8){
+            char * memory_location = (char *)(memory) + physical_address + offset;
+            long value;
+            memcpy(&value, memory_location, 8);
+            std::cout << value << ", ";
+        }
+        if(offset > 5*8-1){
+            overflow = true;
+            amount = size/8;
+        }
+    }else if(type == DataType::Double){
+        for(offset = 0; offset < 5*8;offset += 8){
+            char * memory_location = (char *)(memory) + physical_address + offset;
+            double value;
+            memcpy(&value, memory_location, 8);
+            std::cout << value << ", ";
+        }
+        if(offset > 5*8-1){
+            overflow = true;
+            amount = size/8;
+        }
+    }else if(type == DataType::Short){
+        for(offset = 0; offset < 5*2;offset += 2){
+            short * memory_location = (short *)(memory) + physical_address + offset;
+            std::cout << *memory_location << ", ";
+        }
+        if(offset > 5*2-1){
+            overflow = true;
+            amount = size/2;
+        }
+    }else{
+        for(offset = 0; offset < 5;offset += 1){
+            char * memory_location = (char *)(memory) + physical_address + offset;
+            std::cout << *memory_location << ", ";
+        }
+        if(offset > 5-1){
+            overflow = true;
+            amount = size;
+        }
+    }
+    if(overflow){
+        std::cout << "... [" << amount << " items]"; 
+    }
+    std::cout << std::endl;
+ }
+
+
+DataType stodt(std::string in){
+    DataType out;
+    if(in == "int"){
+        out = DataType::Int;
+    }else if(in == "char"){
+        out = DataType::Char;
+    }else if(in == "long"){
+        out = DataType::Long;
+    }else if(in == "short"){
+        out = DataType::Short;
+    }else if(in == "float"){
+        out = DataType::Float;
+    }else if(in == "double"){
+        out = DataType::Double;
+    }else{
+        out = DataType::FreeSpace;
+    }
+    return out;
 }
