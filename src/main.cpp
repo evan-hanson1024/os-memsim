@@ -114,7 +114,7 @@ int main(int argc, char **argv)
                             if (variables[variable_index]->name == arguments[1]) {
                                 int physical_address = page_table->getPhysicalAddress(stoi(arguments[0]), variables[variable_index]->virtual_address);
                                 char * memory_location = (char *)(memory) + physical_address;
-                                std::cout << *memory_location << std::endl;
+                                std::cout << memory_location[physical_address] << std::endl;
                             }
                         }
                     }
