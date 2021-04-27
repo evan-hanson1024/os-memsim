@@ -142,13 +142,13 @@ DataType stodt(std::string in){
     if(in == "int"){
         out = DataType::Int;
     }else if(in == "char"){
-        out = DataType::Int;
+        out = DataType::Char;
     }else if(in == "long"){
-        out = DataType::Int;
+        out = DataType::Long;
     }else if(in == "short"){
-        out = DataType::Int;
+        out = DataType::Short;
     }else if(in == "float"){
-        out = DataType::Int;
+        out = DataType::Float;
     }else if(in == "double"){
         out = DataType::Double;
     }else{
