@@ -205,14 +205,35 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 {
     // TODO: implement this!
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
-    bool holeFound = false;
+    std::vector<std::string> processes = mmu->getProcesses();
+    bool found = false;
     int i;
+    for(i = 0; i < processes.size() ; i++){
+        if(std::stoi(processes[i]) == pid){
+            found = true;
+        }
+    }
+    if(!found){
+        std::cout << "error: process not found"<< std::endl;
+        return; 
+    }
+    
+    bool holeFound = false;
+    
     int pageSize = page_table->getPageSize();
     int page = -1;
     int variable_size = getVariableSize(type, num_elements);
     std::vector<Variable*> variables = mmu->getVariables(pid);
     int address = 0;
     int count = 0;
+    
+    for(i = 0; i < variables.size(); i++){
+        if(variables[i]->name == var_name){
+            std::cout << "error: variable already exists"<< std::endl;
+            return;
+        }
+    }
+
 
     //go through every variable in a process to check if there is room at the same page
     // do this with the virtual addresses?
@@ -226,29 +247,37 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     }else{
         address = mmu->getNewAddress(pid, variable_size, false);
     }
+    int offset = address % getVariableSize(type, 1);
+    if(offset && (address + offset + variable_size) / pageSize != address / pageSize){
+        address += offset;
+        mmu->addVariableToProcess(pid, "<FREE_SPACE>", DataType::FreeSpace, offset, address-offset);
+    }
     
+    for(int i = page_table->getNextPage(pid); i <= (address + variable_size)/pageSize; i=page_table->getNextPage(pid)){
+                page = i;
+                if(page*pageSize > 67108864){
+                    std::cout << "Allocation exceeds system memory" << std::endl;
+                    return;
+                }
+                page_table->addEntry(pid, page);
+    }
 
-    //check the last hole
-    if(!holeFound){
-        int old_address = 0;
-        if(variables.size() > 0) {
-            old_address = variables[variables.size() - 1]->virtual_address;
-        }
-        int space_left = pageSize - (address % pageSize);
-        if(address/pageSize == old_address/pageSize && space_left >= variable_size){ //same page and room for the variable
-            holeFound = true; // holeFound for entire variable
-        }else if(space_left < getVariableSize(type, 1)){
-                mmu->addVariableToProcess(pid, "<FREE_SPACE>", DataType::FreeSpace, space_left, address);
-                address += space_left;
-        }
-    }
+    // //check the last hole
+    // if(!holeFound){
+    //     int old_address = 0;
+    //     if(variables.size() > 0) {
+    //         old_address = variables[variables.size() - 1]->virtual_address;
+    //     }
+    //     int space_left = pageSize - (address % pageSize);
+    //     if(address + variable_size/pageSize == old_address/pageSize && space_left >= variable_size){ //same page and room for the variable
+    //         holeFound = true; // holeFound for entire variable
+    //     }else{
+            
+    //     }
+        
+    // }
     //   - if no hole is large enough, allocate new page(s)
-    if (!holeFound) {
-        for(int i = page_table->getNextPage(pid); i <= (address + variable_size)/pageSize; i++){
-            page = i;
-            page_table->addEntry(pid, page);
-        }
-    }
+    
     //   - insert variable into MMU
     mmu->addVariableToProcess(pid, var_name, type, variable_size, address);
 
@@ -264,11 +293,25 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
 {
     // TODO: implement this!
     //   - look up physical address for variable based on its virtual address / offset
-    int physical_address = page_table->getPhysicalAddress(pid, mmu->getVirtualAddress(pid, var_name) + offset);
-    if(physical_address == -1){
+    bool found = false;
+    int i;
+    std::vector<std::string> processes = mmu->getProcesses();
+    for(i = 0; i < processes.size() ; i++){
+        if(std::stoi(processes[i]) == pid){
+            found = true;
+        }
+    }
+    if(!found){
+        std::cout << "error: process not found"<< std::endl;
+        return; 
+    }
+    int virtual_address = mmu->getVirtualAddress(pid, var_name);
+    if(virtual_address == -1){
         std::cout << "error: variable not found"<< std::endl;
         return; // return early so no damage is done.
     }
+    int physical_address = page_table->getPhysicalAddress(pid, virtual_address + offset);
+    
     DataType type = mmu->getDataType(pid, var_name);
     char * memory_location = (char *)(memory) + physical_address;
     if(type == DataType::Char){
@@ -289,6 +332,19 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 {
     // TODO: implement this!
     //   - remove entry from MMU
+    bool found = false;
+    int i;
+    std::vector<std::string> processes = mmu->getProcesses();
+    for(i = 0; i < processes.size() ; i++){
+        if(std::stoi(processes[i]) == pid){
+            found = true;
+        }
+    }
+    if(!found){
+        std::cout << "error: process not found"<< std::endl;
+        return; 
+    }
+
     if(mmu->getVirtualAddress(pid, var_name) == -1){
         std::cout << "error: variables doesn't exist" << std::endl;
         return;
@@ -314,6 +370,19 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
     // TODO: implement this!
     //   - remove process from MMU
+    bool found = false;
+    int i;
+    std::vector<std::string> processes = mmu->getProcesses();
+    for(i = 0; i < processes.size() ; i++){
+        if(std::stoi(processes[i]) == pid){
+            found = true;
+        }
+    }
+    if(!found){
+        std::cout << "error: process not found"<< std::endl;
+        return; 
+    }
+
     std::vector<uint32_t> virtualAddresses = mmu->removeProcess(pid);
     //   - free all pages associated with given process
     uint32_t virual_address;

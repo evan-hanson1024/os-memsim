@@ -167,7 +167,7 @@ uint32_t Mmu::getVirtualAddress(uint32_t pid, std::string var_name){
             }
         }
     }
-    return -1; //return max value, no address found. 
+    return -1; //return -1 value, no address found. 
 }
 
 DataType Mmu::getDataType(uint32_t pid, std::string var_name){
